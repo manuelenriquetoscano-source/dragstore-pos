@@ -4,13 +4,142 @@
     <meta charset="UTF-8">
     <title>Caja - Dragstore</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; gap: 20px; padding: 20px; }
-        .scanner-section { width: 40%; background: #f8f9fa; padding: 20px; border-radius: 8px; }
-        .cart-section { width: 60%; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
-        .total-box { font-size: 24px; font-weight: bold; margin-top: 20px; color: #28a745; }
-        #input_codigo { width: 100%; padding: 10px; font-size: 18px; }
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.68);
+            --glass-border: rgba(255, 255, 255, 0.42);
+            --glass-shadow: 0 24px 45px -30px rgba(44, 62, 80, 0.5);
+            --glass-blur: 12px;
+            --text-primary: #1e293b;
+            --text-muted: #64748b;
+            --brand: #28a745;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            margin: 0;
+            color: var(--text-primary);
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 12% 20%, rgba(52, 152, 219, 0.2), transparent 38%),
+                radial-gradient(circle at 85% 15%, rgba(40, 167, 69, 0.15), transparent 34%),
+                linear-gradient(145deg, #ebf4fc 0%, #f8fbff 46%, #edf7f1 100%);
+            box-sizing: border-box;
+        }
+
+        .scanner-section,
+        .cart-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(var(--glass-blur));
+            -webkit-backdrop-filter: blur(var(--glass-blur));
+        }
+
+        .scanner-section {
+            width: 40%;
+            padding: 24px;
+        }
+
+        .cart-section {
+            width: 60%;
+            padding: 24px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #1f2d3d;
+        }
+
+        #input_codigo {
+            width: 100%;
+            padding: 12px 14px;
+            font-size: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.75);
+            color: var(--text-primary);
+            box-sizing: border-box;
+        }
+
+        #input_codigo:focus {
+            outline: none;
+            border-color: rgba(40, 167, 69, 0.75);
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.18);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        th {
+            background: rgba(44, 62, 80, 0.9);
+            color: #ffffff;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        td {
+            border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+            padding: 10px;
+            text-align: left;
+            background: rgba(255, 255, 255, 0.38);
+        }
+
+        .total-box {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: var(--brand);
+        }
+
+        .btn-confirmar {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #28a745, #23903c);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 16px 24px -20px rgba(35, 144, 60, 0.8);
+        }
+
+        .btn-confirmar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 28px -20px rgba(35, 144, 60, 0.95);
+        }
+
+        #info_producto {
+            color: var(--text-muted) !important;
+        }
+
+        @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+            .scanner-section,
+            .cart-section {
+                background: rgba(255, 255, 255, 0.9);
+            }
+        }
+
+        @media (max-width: 980px) {
+            body {
+                flex-direction: column;
+            }
+
+            .scanner-section,
+            .cart-section {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -39,7 +168,7 @@
     </table>
     <div class="total-box">Total: $<span id="total_venta">0.00</span></div>
     <br>
-    <button onclick="finalizarVenta()" style="padding: 15px 30px; background: #28a745; color: white; border: none; cursor: pointer;">CONFIRMAR VENTA</button>
+    <button onclick="finalizarVenta()" class="btn-confirmar">CONFIRMAR VENTA</button>
 </div>
 
 <script>
