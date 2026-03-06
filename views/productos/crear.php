@@ -1,28 +1,18 @@
 <?php
-// Archivo: views/productos/crear.php
-require_once '../../config/database.php';
-require_once '../../models/Producto.php';
+require_once '../../config/bootstrap.php';
+requireLogin(['admin']);
+require_once '../../controllers/ProductoController.php';
 
-$mensaje = "";
-$tipo_mensaje = "";
+$mensaje = isset($_GET['mensaje']) ? (string)$_GET['mensaje'] : "";
+$tipo_mensaje = isset($_GET['tipo']) ? (string)$_GET['tipo'] : "";
 
 if ($_POST) {
     $database = new Database();
     $db = $database->getConnection();
-    $producto = new Producto($db);
-
-    $producto->codigo_barras = $_POST['codigo_barras'];
-    $producto->nombre = $_POST['nombre'];
-    $producto->precio = $_POST['precio'];
-    $producto->stock = $_POST['stock'];
-
-    if ($producto->crear()) {
-        $mensaje = "¡Producto guardado con éxito!";
-        $tipo_mensaje = "success";
-    } else {
-        $mensaje = "No se pudo guardar el producto. Verifica el código.";
-        $tipo_mensaje = "danger";
-    }
+    $controller = new ProductoController($db);
+    $result = $controller->crearProductoDesdeRequest($_POST);
+    $mensaje = $result['message'];
+    $tipo_mensaje = $result['ok'] ? 'success' : 'danger';
 }
 ?>
 
@@ -41,24 +31,25 @@ if ($_POST) {
             --success: #27ae60;
             --bg: #f8fafc;
         }
-        body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #334155; }
+        body { font-family: 'Nunito Sans', sans-serif; background: var(--bg); margin: 0; padding: 12px; color: #334155; }
         
         .form-container {
             max-width: 500px;
-            margin: 40px auto;
+            margin: 12px auto;
             background: white;
-            padding: 40px;
-            border-radius: 20px;
+            padding: 24px 16px;
+            border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             border: 1px solid #e2e8f0;
         }
 
         .header { text-align: center; margin-bottom: 30px; }
         .header i { font-size: 40px; color: var(--success); margin-bottom: 10px; }
-        .header h1 { margin: 0; font-size: 24px; color: var(--primary); }
+        .header h1 { margin: 0; font-size: 22px; color: var(--primary); }
 
         .form-group { margin-bottom: 20px; }
         .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; }
+        .form-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
         
         .input-group { position: relative; display: flex; align-items: center; }
         .input-group i { position: absolute; left: 15px; color: #94a3b8; }
@@ -78,7 +69,7 @@ if ($_POST) {
             width: 100%;
             background: var(--success);
             color: white;
-            padding: 14px;
+            padding: 13px;
             border: none;
             border-radius: 10px;
             font-size: 16px;
@@ -105,6 +96,22 @@ if ($_POST) {
         .alert { padding: 15px; border-radius: 10px; margin-bottom: 25px; text-align: center; font-weight: 600; }
         .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
         .alert-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+        @media (min-width: 769px) {
+            body { padding: 20px; }
+            .form-container {
+                margin: 40px auto;
+                padding: 40px;
+                border-radius: 20px;
+            }
+            .form-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
+            .btn-submit {
+                padding: 14px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -117,7 +124,7 @@ if ($_POST) {
 
     <?php if($mensaje): ?>
         <div class="alert alert-<?php echo $tipo_mensaje; ?>">
-            <?php echo $mensaje; ?>
+            <?php echo htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8'); ?>
         </div>
     <?php endif; ?>
 
@@ -138,7 +145,7 @@ if ($_POST) {
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="form-grid">
             <div class="form-group">
                 <label>Precio Venta</label>
                 <div class="input-group">

@@ -1,19 +1,18 @@
 <?php
-// Archivo: eliminar_producto.php
-require_once 'config/database.php';
-require_once 'models/Producto.php';
+require_once 'config/bootstrap.php';
+requireLogin(['admin']);
+require_once 'controllers/ProductoController.php';
 
 if (isset($_GET['id'])) {
     $database = new Database();
     $db = $database->getConnection();
-    $producto = new Producto($db);
-    
-    $producto->id = $_GET['id'];
+    $controller = new ProductoController($db);
+    $id = (int)$_GET['id'];
 
-    if ($producto->eliminar()) {
-        header("Location: index.php?msg=eliminado");
+    if ($controller->eliminarProducto($id)) {
+        header("Location: /dragstore-pos/views/productos/index_productos.php?msg=eliminado");
     } else {
-        echo "Error al eliminar.";
+        header("Location: /dragstore-pos/views/productos/index_productos.php?msg=error");
     }
+    exit;
 }
-?>

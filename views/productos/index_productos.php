@@ -1,30 +1,20 @@
 <?php
-// Archivo: views/productos/index_productos.php
-require_once '../../config/database.php';
-require_once '../../models/Producto.php';
+require_once '../../config/bootstrap.php';
+requireLogin(['admin']);
+require_once '../../controllers/ProductoController.php';
 
 $database = new Database();
 $db = $database->getConnection();
-$producto = new Producto($db);
-
-// --- LÓGICA DE FILTRADO ---
-$filtroBajoStock = isset($_GET['filtro']) && $_GET['filtro'] == 'bajo_stock';
-
-if ($filtroBajoStock) {
-    // Solo productos con menos de 5 unidades
-    $query = "SELECT * FROM productos WHERE stock < 5 ORDER BY stock ASC";
-    $stmt = $db->prepare($query);
-    $stmt->execute();
-} else {
-    // Carga normal de todos los productos
-    $stmt = $producto->leerTodo();
-}
+$controller = new ProductoController($db);
+$filtroBajoStock = isset($_GET['filtro']) && $_GET['filtro'] === 'bajo_stock';
+$productos = $controller->listarInventario($filtroBajoStock);
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventario - Dragstore</title>
     <style>
         :root {
@@ -44,7 +34,7 @@ if ($filtroBajoStock) {
                 radial-gradient(circle at 15% 20%, rgba(52, 152, 219, 0.2), transparent 38%),
                 radial-gradient(circle at 82% 12%, rgba(231, 76, 60, 0.1), transparent 35%),
                 linear-gradient(145deg, #eaf3fc 0%, #f8fbff 45%, #eef7f4 100%);
-            padding: 30px;
+            padding: 16px;
             margin: 0;
             color: var(--text-primary);
             min-height: 100vh;
@@ -54,7 +44,7 @@ if ($filtroBajoStock) {
             max-width: 980px;
             margin: auto;
             background: var(--glass-bg);
-            padding: 24px;
+            padding: 16px;
             border-radius: 16px;
             box-shadow: var(--glass-shadow);
             border: 1px solid var(--glass-border);
@@ -64,16 +54,16 @@ if ($filtroBajoStock) {
 
         header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            align-items: stretch;
             margin-bottom: 20px;
-            gap: 14px;
-            flex-wrap: wrap;
+            gap: 10px;
         }
 
         h1 {
             margin: 0;
             color: #1f2d3d;
+            font-size: 24px;
         }
 
         table {
@@ -84,11 +74,20 @@ if ($filtroBajoStock) {
             overflow: hidden;
         }
 
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+        }
+
         th,
         td {
             padding: 12px;
             border: 1px solid rgba(148, 163, 184, 0.22);
             text-align: left;
+            white-space: nowrap;
+            font-size: 14px;
         }
 
         th {
@@ -123,6 +122,10 @@ if ($filtroBajoStock) {
             font-size: 14px;
             border: 1px solid rgba(255, 255, 255, 0.4);
             box-shadow: 0 10px 18px -16px rgba(44, 62, 80, 0.8);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
         }
 
         .btn-blue {
@@ -141,9 +144,38 @@ if ($filtroBajoStock) {
             }
         }
 
-        @media (max-width: 768px) {
-            body { padding: 16px; }
-            .container { padding: 16px; }
+        .no-print {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        @media (min-width: 769px) {
+            body { padding: 30px; }
+            .container { padding: 24px; }
+            header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                gap: 14px;
+                flex-wrap: wrap;
+            }
+            h1 {
+                font-size: 32px;
+            }
+            .no-print {
+                display: flex;
+                flex-direction: row;
+                gap: 8px;
+            }
+            .btn {
+                width: auto;
+            }
+            th,
+            td {
+                font-size: 16px;
+            }
         }
 
         @media print { .no-print { display: none; } }
@@ -168,6 +200,7 @@ if ($filtroBajoStock) {
         </div>
     <?php endif; ?>
 
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
@@ -178,21 +211,22 @@ if ($filtroBajoStock) {
             </tr>
         </thead>
         <tbody>
-            <?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
+            <?php foreach ($productos as $row): ?>
                 <tr class="<?php echo ($row['stock'] < 5) ? 'bajo-stock' : ''; ?>">
-                    <td><?php echo $row['codigo_barras']; ?></td>
-                    <td><?php echo $row['nombre']; ?></td>
+                    <td><?php echo htmlspecialchars($row['codigo_barras'], ENT_QUOTES, 'UTF-8'); ?></td>
+                    <td><?php echo htmlspecialchars($row['nombre'], ENT_QUOTES, 'UTF-8'); ?></td>
                     <td>$<?php echo number_format($row['precio'], 2); ?></td>
                     <td>
-                        <?php echo $row['stock']; ?>
+                        <?php echo (int)$row['stock']; ?>
                         <?php if ($row['stock'] < 5): ?>
                             <span class="badge-danger">¡Reponer!</span>
                         <?php endif; ?>
                     </td>
                 </tr>
-            <?php endwhile; ?>
+            <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 
     <div class="no-print" style="margin-top: 20px;">
         <button onclick="window.print()" class="btn btn-gray">🖨️ Imprimir Lista</button>

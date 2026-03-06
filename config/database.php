@@ -1,23 +1,35 @@
 <?php
-// Archivo: config/database.php
+require_once __DIR__ . '/env.php';
 
 class Database {
-    private $host = "localhost";
-    private $db_name = "dragstore_db"; // Cambia esto al nombre de tu DB en Workbench
-    private $username = "root";
-    private $password = "root"; // Tu contraseña de Workbench
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
+    private $charset;
     public $conn;
+
+    public function __construct() {
+        $this->host = env('DB_HOST', 'localhost');
+        $this->db_name = env('DB_NAME', 'dragstore_db');
+        $this->username = env('DB_USER', 'root');
+        $this->password = env('DB_PASS', 'root');
+        $this->charset = env('DB_CHARSET', 'utf8mb4');
+    }
 
     public function getConnection() {
         $this->conn = null;
 
         try {
-            $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
-            // Configuramos para que PHP nos avise si hay errores de SQL
+            $dsn = "mysql:host={$this->host};dbname={$this->db_name};charset={$this->charset}";
+            $this->conn = new PDO($dsn, $this->username, $this->password);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn->exec("set names utf8");
-        } catch(PDOException $exception) {
-            echo "Error de conexión: " . $exception->getMessage();
+            $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        } catch (PDOException $exception) {
+            error_log('Error de conexion DB: ' . $exception->getMessage());
+            if (env('APP_DEBUG', 'false') === 'true') {
+                echo 'Error de conexion DB.';
+            }
         }
 
         return $this->conn;

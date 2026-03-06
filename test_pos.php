@@ -1,5 +1,14 @@
 <?php
 // Archivo: test_pos.php
+require_once __DIR__ . '/config/auth.php';
+require_once __DIR__ . '/config/env.php';
+
+if (env('APP_ENV', 'local') !== 'local') {
+    http_response_code(404);
+    exit;
+}
+
+requireLogin(['admin']);
 header('Content-Type: text/html; charset=utf-8');
 
 echo "<h2>🧪 Diagnóstico del Sistema POS - Dragstore</h2>";

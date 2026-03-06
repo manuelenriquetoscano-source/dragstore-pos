@@ -27,6 +27,18 @@ class Producto {
         return $stmt;
     }
 
+    public function leerBajoStock($minimo = 5) {
+        $query = "SELECT id, codigo_barras, nombre, precio, stock 
+                  FROM " . $this->table_name . " 
+                  WHERE stock < :minimo
+                  ORDER BY stock ASC";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindValue(':minimo', (int)$minimo, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt;
+    }
+
     // CREAR: Para registrar nuevos ingresos
     public function crear() {
         $query = "INSERT INTO " . $this->table_name . " 

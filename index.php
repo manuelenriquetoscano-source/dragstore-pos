@@ -1,3 +1,17 @@
+<?php
+require_once __DIR__ . '/config/bootstrap.php';
+requireLogin(['admin', 'caja']);
+require_once __DIR__ . '/controllers/ProductoController.php';
+
+$database = new Database();
+$db = $database->getConnection();
+$alertas = 0;
+if ($db) {
+    $productoController = new ProductoController($db);
+    $alertas = $productoController->contarStockCritico(5);
+}
+$user = currentUser();
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -37,17 +51,17 @@
 
     .container {
         max-width: 1200px;
-        margin: 60px auto;
+        margin: 18px auto 24px;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 30px;
-        padding: 0 20px;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 14px;
     }
 
     .card {
         background: var(--glass-bg);
-        padding: 50px 30px;
-        border-radius: 20px;
+        padding: 36px 22px;
+        border-radius: 18px;
         text-align: center;
         text-decoration: none;
         color: #334155;
@@ -77,8 +91,8 @@
     }
 
     .icon-wrapper {
-        font-size: 55px;
-        margin-bottom: 25px;
+        font-size: 48px;
+        margin-bottom: 18px;
         transition: transform 0.3s ease;
         position: relative;
         z-index: 1;
@@ -95,7 +109,7 @@
     .card h3 {
         margin: 0 0 12px 0;
         font-weight: 800;
-        font-size: 24px;
+        font-size: 22px;
         color: var(--primary);
         position: relative;
         z-index: 1;
@@ -103,7 +117,7 @@
 
     .card p {
         margin: 0;
-        font-size: 16px;
+        font-size: 15px;
         color: #64748b;
         font-weight: 400;
         position: relative;
@@ -112,13 +126,13 @@
 
     .badge {
         position: absolute;
-        top: 20px;
-        right: 20px;
+        top: 12px;
+        right: 12px;
         background: rgba(231, 76, 60, 0.9);
         color: white;
         padding: 5px 12px;
         border-radius: 9999px;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
         box-shadow: 0 4px 6px -1px rgba(231, 76, 60, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.4);
@@ -127,16 +141,16 @@
 
     .search-wrapper {
         max-width: 600px;
-        margin: 20px auto;
+        margin: 14px auto 6px;
         position: relative;
-        padding: 0 20px;
+        padding: 0 14px;
     }
 
     .search-box {
         background: var(--glass-bg);
         display: flex;
         align-items: center;
-        padding: 15px 25px;
+        padding: 12px 16px;
         border-radius: 50px;
         box-shadow: var(--glass-shadow);
         border: 1px solid var(--glass-border);
@@ -155,7 +169,7 @@
         outline: none;
         width: 100%;
         font-family: 'Nunito Sans', sans-serif;
-        font-size: 18px;
+        font-size: 16px;
         color: var(--primary);
         background: transparent;
     }
@@ -165,8 +179,8 @@
     .search-results-container {
         position: absolute;
         top: 100%;
-        left: 20px;
-        right: 20px;
+        left: 14px;
+        right: 14px;
         background: var(--glass-bg-strong);
         border-radius: 15px;
         box-shadow: var(--glass-shadow);
@@ -181,11 +195,13 @@
     }
 
     .result-item {
-        padding: 12px 20px;
+        padding: 10px 14px;
         border-bottom: 1px solid rgba(148, 163, 184, 0.24);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     .result-item:last-child { border: none; }
@@ -196,10 +212,34 @@
         border-radius: 20px;
         font-size: 14px;
         font-weight: 800;
+        margin-left: auto;
     }
 
     .stock-ok { background: #dcfce7; color: #166534; }
     .stock-low { background: #fee2e2; color: #991b1b; }
+
+    .footer {
+        text-align: center;
+        padding: 20px 16px 28px;
+        color: #475569;
+        font-size: 14px;
+    }
+
+    .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px 0;
+        color: #334155;
+        font-size: 14px;
+        gap: 10px;
+    }
+
+    .topbar a {
+        color: #1e3a8a;
+        font-weight: 700;
+        text-decoration: none;
+    }
 
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
         .card,
@@ -209,19 +249,81 @@
         }
     }
 
-    @media (max-width: 768px) {
+    @media (min-width: 769px) {
+        .topbar {
+            padding: 16px 20px 0;
+        }
+
         .container {
-            gap: 20px;
-            margin: 30px auto;
+            margin: 60px auto;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 0 20px;
         }
 
         .card {
-            padding: 36px 22px;
+            padding: 50px 30px;
+            border-radius: 20px;
+        }
+
+        .icon-wrapper {
+            font-size: 55px;
+            margin-bottom: 25px;
+        }
+
+        .card h3 {
+            font-size: 24px;
+        }
+
+        .card p {
+            font-size: 16px;
+        }
+
+        .badge {
+            top: 20px;
+            right: 20px;
+            font-size: 13px;
+        }
+
+        .search-wrapper {
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .search-box {
+            padding: 15px 25px;
+        }
+
+        #quick-search {
+            font-size: 18px;
+        }
+
+        .search-results-container {
+            left: 20px;
+            right: 20px;
+        }
+
+        .result-item {
+            padding: 12px 20px;
+            flex-wrap: nowrap;
+            gap: 0;
+        }
+
+        .result-stock {
+            margin-left: 0;
         }
     }
 </style>
 
 <!-- barra de búsqueda rápida -->
+
+<div class="topbar">
+    <div>
+        Usuario: <strong><?php echo htmlspecialchars($user['display_name'], ENT_QUOTES, 'UTF-8'); ?></strong>
+        (<?php echo htmlspecialchars($user['role'], ENT_QUOTES, 'UTF-8'); ?>)
+    </div>
+    <a href="/dragstore-pos/logout.php">Cerrar sesión</a>
+</div>
 
 <div class="search-wrapper">
     <div class="search-box">
@@ -240,16 +342,18 @@
         <p>Abrir la caja y procesar cobros rápidamente con escáner.</p>
     </a>
 
-    <a href="views/productos/index_productos.php" class="card inventory">
-        <?php if(isset($alertas) && $alertas > 0): ?>
-            <span class="badge"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $alertas; ?> críticos</span>
-        <?php endif; ?>
-        <div class="icon-wrapper">
-            <i class="fa-solid fa-boxes-stacked"></i>
-        </div>
-        <h3>Inventario</h3>
-        <p>Controlar existencias, actualizar precios y gestionar stock.</p>
-    </a>
+    <?php if ($user['role'] === 'admin'): ?>
+        <a href="views/productos/index_productos.php" class="card inventory">
+            <?php if(isset($alertas) && $alertas > 0): ?>
+                <span class="badge"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $alertas; ?> críticos</span>
+            <?php endif; ?>
+            <div class="icon-wrapper">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <h3>Inventario</h3>
+            <p>Controlar existencias, actualizar precios y gestionar stock.</p>
+        </a>
+    <?php endif; ?>
 
     <a href="views/ventas/reporte.php" class="card reports">
         <div class="icon-wrapper">
