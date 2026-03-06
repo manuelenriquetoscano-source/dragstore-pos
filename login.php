@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 require_once __DIR__ . '/config/auth.php';
 
 if (isLoggedIn()) {
@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /dragstore-pos/index.php');
         exit;
     }
-    $error = 'Usuario o contraseña inválidos.';
+    $error = 'Usuario o contrasena invalidos.';
 }
 ?>
 <!DOCTYPE html>
@@ -105,11 +105,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input id="username" type="text" name="username" required autofocus>
         </div>
         <div class="field">
-            <label for="password">Contraseña</label>
+            <label for="password">Contrasena</label>
             <input id="password" type="password" name="password" required>
         </div>
         <button class="btn" type="submit">Ingresar</button>
-        <div class="help">Configura credenciales en el archivo <code>.env</code>.</div>
+        <div class="help">Credenciales gestionadas en tabla <code>usuarios</code> (usa <code>php migrate.php</code> para crearla).</div>
     </form>
 </body>
 </html>
+

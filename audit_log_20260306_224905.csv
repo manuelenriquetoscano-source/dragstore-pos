@@ -1,0 +1,5 @@
+﻿﻿id;created_at;actor_username;action;entity_type;entity_id;details_json
+4;"2026-03-06 18:40:24";admin;auth.login;session;1;"{""ip"":""::1"",""role"":""admin"",""method"":""db"",""user_agent"":""Mozilla\/5.0 (Windows NT; Windows NT 10.0; es-AR) WindowsPowerShell\/5.1.26100.7920""}"
+3;"2026-03-06 18:40:10";admin;auth.logout;session;1;"{""ip"":""::1"",""role"":""admin"",""user_agent"":""Mozilla\/5.0 (Windows NT; Windows NT 10.0; es-AR) WindowsPowerShell\/5.1.26100.7920""}"
+2;"2026-03-06 18:40:09";admin;auth.login;session;1;"{""ip"":""::1"",""role"":""admin"",""method"":""db"",""user_agent"":""Mozilla\/5.0 (Windows NT; Windows NT 10.0; es-AR) WindowsPowerShell\/5.1.26100.7920""}"
+1;"2026-03-06 18:39:59";admin;auth.login;session;1;"{""ip"":""::1"",""role"":""admin"",""method"":""db"",""user_agent"":""Mozilla\/5.0 (Windows NT; Windows NT 10.0; es-AR) WindowsPowerShell\/5.1.26100.7920""}"

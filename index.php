@@ -235,10 +235,11 @@ $user = currentUser();
         gap: 10px;
     }
 
-    .topbar a {
+.topbar a {
         color: #1e3a8a;
         font-weight: 700;
         text-decoration: none;
+        margin-left: 10px;
     }
 
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -322,7 +323,13 @@ $user = currentUser();
         Usuario: <strong><?php echo htmlspecialchars($user['display_name'], ENT_QUOTES, 'UTF-8'); ?></strong>
         (<?php echo htmlspecialchars($user['role'], ENT_QUOTES, 'UTF-8'); ?>)
     </div>
-    <a href="/dragstore-pos/logout.php">Cerrar sesión</a>
+    <div>
+        <?php if ($user['role'] === 'admin'): ?>
+            <a href="/dragstore-pos/views/admin/usuarios.php">Usuarios</a>
+            <a href="/dragstore-pos/views/admin/audit.php">Auditoría</a>
+        <?php endif; ?>
+        <a href="/dragstore-pos/logout.php">Cerrar sesión</a>
+    </div>
 </div>
 
 <div class="search-wrapper">

@@ -17,15 +17,16 @@ php deploy.php
 - `--skip-tests`
 - `--skip-migrate`
 - `--skip-health`
+- `--dry-run` (simula migraciones, no ejecuta SQL)
 
 Ejemplo:
 
 ```bash
 php deploy.php --skip-tests
+php deploy.php --dry-run
 ```
 
 ## Logs
 Todos los eventos de deploy se registran en:
 
 `logs/app-YYYY-MM-DD.log`
-

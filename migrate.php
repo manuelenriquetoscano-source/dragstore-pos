@@ -10,6 +10,9 @@ if (PHP_SAPI !== 'cli') {
     exit(1);
 }
 
+$flags = array_flip(array_slice($argv, 1));
+$dryRun = isset($flags['--dry-run']);
+
 $database = new Database();
 $db = $database->getConnection();
 if (!$db) {
@@ -18,6 +21,20 @@ if (!$db) {
 }
 
 try {
+    if ($dryRun) {
+        $pending = getPendingMigrations($db, __DIR__ . '/migrations');
+        if (count($pending) === 0) {
+            echo "[DRY-RUN] No hay migraciones pendientes.\n";
+        } else {
+            echo "[DRY-RUN] Migraciones pendientes:\n";
+            foreach ($pending as $migration) {
+                echo " - $migration\n";
+            }
+            echo "[DRY-RUN] Total pendientes: " . count($pending) . "\n";
+        }
+        exit(0);
+    }
+
     $executed = runPendingMigrations($db, __DIR__ . '/migrations', function (string $line): void {
         echo $line . PHP_EOL;
     });

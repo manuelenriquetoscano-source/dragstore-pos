@@ -15,6 +15,7 @@ $skipLint = isset($flags['--skip-lint']);
 $skipTests = isset($flags['--skip-tests']);
 $skipMigrate = isset($flags['--skip-migrate']);
 $skipHealth = isset($flags['--skip-health']);
+$dryRun = isset($flags['--dry-run']);
 
 function out(string $message): void
 {
@@ -60,9 +61,9 @@ function runPhpLint(string $rootDir): void
     out("[ OK ] Lint PHP");
 }
 
-function runMigrations(): void
+function runMigrations(bool $dryRun = false): void
 {
-    out("[RUN ] Migraciones");
+    out($dryRun ? "[RUN ] Migraciones (dry-run)" : "[RUN ] Migraciones");
     $database = new Database();
     $db = $database->getConnection();
     if (!$db instanceof PDO) {
@@ -70,6 +71,21 @@ function runMigrations(): void
     }
 
     try {
+        if ($dryRun) {
+            $pending = getPendingMigrations($db, __DIR__ . '/migrations');
+            if (count($pending) === 0) {
+                out("      [DRY-RUN] No hay migraciones pendientes.");
+            } else {
+                out("      [DRY-RUN] Pendientes:");
+                foreach ($pending as $migration) {
+                    out("      - $migration");
+                }
+                out("      [DRY-RUN] Total pendientes: " . count($pending));
+            }
+            out("[ OK ] Migraciones (dry-run)");
+            return;
+        }
+
         $executed = runPendingMigrations($db, __DIR__ . '/migrations', function (string $line): void {
             out("      $line");
         });
@@ -106,7 +122,8 @@ appLog('info', 'deploy.started', [
     'skip_lint' => $skipLint,
     'skip_tests' => $skipTests,
     'skip_migrate' => $skipMigrate,
-    'skip_health' => $skipHealth
+    'skip_health' => $skipHealth,
+    'dry_run' => $dryRun
 ]);
 
 out("== Deploy Script ==");
@@ -126,7 +143,7 @@ if (!$skipTests) {
 }
 
 if (!$skipMigrate) {
-    runMigrations();
+    runMigrations($dryRun);
 } else {
     out("[SKIP] Migraciones");
 }
@@ -139,4 +156,3 @@ if (!$skipHealth) {
 
 appLog('info', 'deploy.finished', ['status' => 'ok']);
 out("== Deploy completado ==");
-
