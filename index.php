@@ -107,6 +107,7 @@ $user = currentUser();
     .inventory .icon-wrapper { color: var(--info); }
     .reports .icon-wrapper { color: var(--warning); }
     .turnos .icon-wrapper { color: #0f766e; }
+    .promos .icon-wrapper { color: #7c3aed; }
 
     .card h3 {
         margin: 0 0 12px 0;
@@ -330,6 +331,7 @@ $user = currentUser();
             <a href="/dragstore-pos/views/admin/dashboard.php">Dashboard</a>
             <a href="/dragstore-pos/views/admin/usuarios.php">Usuarios</a>
             <a href="/dragstore-pos/views/admin/audit.php">Auditoría</a>
+            <a href="/dragstore-pos/views/admin/promociones.php">Promociones</a>
         <?php endif; ?>
         <a href="/dragstore-pos/logout.php">Cerrar sesión</a>
     </div>
@@ -376,6 +378,13 @@ $user = currentUser();
             </div>
             <h3>Turnos de Caja</h3>
             <p>Visualizar y administrar aperturas, cierres y actas de turno.</p>
+        </a>
+        <a href="views/admin/promociones.php" class="card promos">
+            <div class="icon-wrapper">
+                <i class="fa-solid fa-tags"></i>
+            </div>
+            <h3>Promociones</h3>
+            <p>Configurar 2x1, descuentos, combos y horarios sin tocar archivos.</p>
         </a>
     <?php endif; ?>
 

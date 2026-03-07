@@ -181,6 +181,7 @@ foreach ($productos as $p) {
             <?php endif; ?>
             <a href="crear.php" class="btn btn-blue">Nuevo Producto</a>
             <a href="reporte_vencimientos.php" class="btn btn-gray">Reporte Vencimientos</a>
+            <a href="reporte_margen.php" class="btn btn-gray">Reporte Margen</a>
             <a href="../../index.php" class="btn btn-blue">Menu Principal</a>
         </div>
     </header>

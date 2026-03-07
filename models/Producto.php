@@ -392,6 +392,46 @@ class Producto
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function listarMargenPorProducto(): array
+    {
+        if ($this->hasTable('producto_lotes')) {
+            $query = "SELECT
+                        p.id,
+                        p.codigo_barras,
+                        p.nombre,
+                        p.precio,
+                        p.stock,
+                        COALESCE(
+                            SUM(CASE WHEN l.cantidad_disponible > 0 AND l.costo_unitario IS NOT NULL THEN l.costo_unitario * l.cantidad_disponible ELSE 0 END)
+                            / NULLIF(SUM(CASE WHEN l.cantidad_disponible > 0 AND l.costo_unitario IS NOT NULL THEN l.cantidad_disponible ELSE 0 END), 0),
+                            AVG(CASE WHEN l.costo_unitario IS NOT NULL THEN l.costo_unitario ELSE NULL END),
+                            0
+                        ) AS costo_referencia,
+                        COALESCE(SUM(CASE WHEN l.cantidad_disponible > 0 THEN l.cantidad_disponible ELSE 0 END), 0) AS stock_en_lotes
+                      FROM productos p
+                      LEFT JOIN producto_lotes l ON l.producto_id = p.id
+                      GROUP BY p.id, p.codigo_barras, p.nombre, p.precio, p.stock
+                      ORDER BY p.nombre ASC";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $query = "SELECT
+                    p.id,
+                    p.codigo_barras,
+                    p.nombre,
+                    p.precio,
+                    p.stock,
+                    0 AS costo_referencia,
+                    0 AS stock_en_lotes
+                  FROM productos p
+                  ORDER BY p.nombre ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function contarStockCritico($minimo = 5)
     {
         if ($this->hasColumn($this->table_name, 'stock_minimo')) {

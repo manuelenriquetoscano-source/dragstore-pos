@@ -255,4 +255,27 @@ class ProductoService
 
         return $rows;
     }
+
+    public function listarReporteMargen(): array
+    {
+        $rows = $this->productoModel->listarMargenPorProducto();
+        foreach ($rows as &$row) {
+            $row['id'] = (int)$row['id'];
+            $row['precio'] = (float)$row['precio'];
+            $row['stock'] = (int)$row['stock'];
+            $row['stock_en_lotes'] = (int)($row['stock_en_lotes'] ?? 0);
+            $row['costo_referencia'] = (float)($row['costo_referencia'] ?? 0);
+            $row['margen_unitario'] = $row['precio'] - $row['costo_referencia'];
+            $row['margen_pct'] = $row['precio'] > 0 ? (($row['margen_unitario'] / $row['precio']) * 100) : 0.0;
+            if ($row['margen_pct'] < 0) {
+                $row['estado_margen'] = 'negativo';
+            } elseif ($row['margen_pct'] < 20) {
+                $row['estado_margen'] = 'bajo';
+            } else {
+                $row['estado_margen'] = 'saludable';
+            }
+        }
+        unset($row);
+        return $rows;
+    }
 }

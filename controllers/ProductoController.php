@@ -71,4 +71,9 @@ class ProductoController
     {
         return $this->service->listarReporteVencimientos($estado, $dias);
     }
+
+    public function listarReporteMargen(): array
+    {
+        return $this->service->listarReporteMargen();
+    }
 }
