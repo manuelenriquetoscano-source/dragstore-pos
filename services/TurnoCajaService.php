@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../models/TurnoCaja.php';
+require_once __DIR__ . '/DashboardService.php';
 
 class TurnoCajaService
 {
@@ -41,7 +42,11 @@ class TurnoCajaService
             return ['ok' => false, 'message' => 'El monto inicial no puede ser negativo'];
         }
 
-        return $this->turnoModel->abrir($usuarioId, round($montoInicial, 2), $observaciones);
+        $result = $this->turnoModel->abrir($usuarioId, round($montoInicial, 2), $observaciones);
+        if (!empty($result['ok'])) {
+            DashboardService::clearCacheGlobal();
+        }
+        return $result;
     }
 
     public function cerrar(int $usuarioId, float $montoFinalDeclarado): array
@@ -58,7 +63,11 @@ class TurnoCajaService
             return ['ok' => false, 'message' => 'No hay turno abierto para cerrar'];
         }
 
-        return $this->turnoModel->cerrar((int)$turno['id'], round($montoFinalDeclarado, 2));
+        $result = $this->turnoModel->cerrar((int)$turno['id'], round($montoFinalDeclarado, 2));
+        if (!empty($result['ok'])) {
+            DashboardService::clearCacheGlobal();
+        }
+        return $result;
     }
 
     public function listarUltimos(int $usuarioId, int $limit = 10): array
@@ -158,6 +167,30 @@ class TurnoCajaService
             'ok' => true,
             'items' => $this->turnoModel->listarConFiltros($normalized, $adminMode, max(1, min(5000, $limit)), 0),
             'filters' => $normalized
+        ];
+    }
+
+    public function obtenerActa(int $turnoId, bool $adminMode, int $usuarioActualId): array
+    {
+        if ($turnoId <= 0) {
+            return ['ok' => false, 'message' => 'Turno invalido'];
+        }
+
+        $turno = $this->turnoModel->obtenerDetalleActa($turnoId);
+        if (!$turno) {
+            return ['ok' => false, 'message' => 'Turno no encontrado'];
+        }
+
+        if (!$adminMode && (int)($turno['usuario_id'] ?? 0) !== $usuarioActualId) {
+            return ['ok' => false, 'message' => 'No autorizado para ver este turno'];
+        }
+
+        $resumenPagos = $this->turnoModel->resumenPagosPorTurno($turnoId);
+
+        return [
+            'ok' => true,
+            'turno' => $turno,
+            'resumen_pagos' => $resumenPagos
         ];
     }
 }

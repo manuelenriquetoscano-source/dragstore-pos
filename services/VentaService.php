@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../models/Venta.php';
 require_once __DIR__ . '/../models/TurnoCaja.php';
+require_once __DIR__ . '/DashboardService.php';
 
 class VentaService
 {
@@ -55,6 +56,7 @@ class VentaService
         if (!$ok) {
             return ['ok' => false, 'message' => 'Error al procesar la transaccion'];
         }
+        DashboardService::clearCacheGlobal();
 
         return ['ok' => true, 'message' => 'Venta completada'];
     }
@@ -145,10 +147,16 @@ class VentaService
         $ventas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $total = 0.0;
+        $totalAnulado = 0.0;
         foreach ($ventas as &$venta) {
             $venta['id'] = (int)$venta['id'];
             $venta['total'] = (float)$venta['total'];
-            $total += $venta['total'];
+            $venta['estado'] = isset($venta['estado']) ? (string)$venta['estado'] : 'completada';
+            if ($venta['estado'] === 'anulada') {
+                $totalAnulado += $venta['total'];
+            } else {
+                $total += $venta['total'];
+            }
         }
         unset($venta);
 
@@ -158,7 +166,73 @@ class VentaService
             'fecha' => $fecha,
             'ventas' => $ventas,
             'cantidad' => count($ventas),
-            'total' => $total
+            'total' => $total,
+            'total_anulado' => $totalAnulado
         ];
+    }
+
+    public function anularVenta(int $ventaId, string $motivo, ?int $actorUserId = null): array
+    {
+        if ($ventaId <= 0) {
+            return ['ok' => false, 'message' => 'ID de venta invalido'];
+        }
+
+        $motivo = trim($motivo);
+        if ($motivo === '') {
+            return ['ok' => false, 'message' => 'Debe informar un motivo de anulacion'];
+        }
+
+        $ok = $this->ventaModel->anularVenta($ventaId, $motivo, $actorUserId);
+        if (!$ok) {
+            return ['ok' => false, 'message' => 'No se pudo anular la venta'];
+        }
+        DashboardService::clearCacheGlobal();
+
+        return ['ok' => true, 'message' => 'Venta anulada correctamente'];
+    }
+
+    public function obtenerDetalleTicket(int $ventaId): array
+    {
+        if ($ventaId <= 0) {
+            return ['ok' => false, 'message' => 'ID de venta invalido'];
+        }
+
+        $data = $this->ventaModel->obtenerVentaParaTicket($ventaId);
+        if (!$data) {
+            return ['ok' => false, 'message' => 'Venta no encontrada'];
+        }
+
+        $venta = $data['venta'];
+        $items = $data['items'];
+
+        $venta['id'] = (int)$venta['id'];
+        $venta['total'] = (float)$venta['total'];
+        $venta['monto_recibido'] = isset($venta['monto_recibido']) ? (float)$venta['monto_recibido'] : null;
+        $venta['vuelto'] = isset($venta['vuelto']) ? (float)$venta['vuelto'] : 0.0;
+        $venta['monto_efectivo'] = isset($venta['monto_efectivo']) ? (float)$venta['monto_efectivo'] : null;
+        $venta['monto_digital'] = isset($venta['monto_digital']) ? (float)$venta['monto_digital'] : null;
+
+        foreach ($items as &$item) {
+            $item['producto_id'] = (int)$item['producto_id'];
+            $item['cantidad'] = (int)$item['cantidad'];
+            $item['precio_unitario'] = (float)$item['precio_unitario'];
+            $item['producto_nombre'] = (string)($item['producto_nombre'] ?? ('Producto #' . $item['producto_id']));
+        }
+        unset($item);
+
+        return [
+            'ok' => true,
+            'venta' => $venta,
+            'items' => $items
+        ];
+    }
+
+    public function obtenerUltimaVentaId(?int $usuarioId = null): array
+    {
+        $ventaId = $this->ventaModel->obtenerUltimaVentaId($usuarioId);
+        if (!$ventaId) {
+            return ['ok' => false, 'message' => 'No hay ventas disponibles para reimpresion'];
+        }
+        return ['ok' => true, 'venta_id' => $ventaId];
     }
 }

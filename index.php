@@ -103,8 +103,10 @@ $user = currentUser();
     }
 
     .sales .icon-wrapper { color: var(--success); }
+    .dashboard .icon-wrapper { color: #0f766e; }
     .inventory .icon-wrapper { color: var(--info); }
     .reports .icon-wrapper { color: var(--warning); }
+    .turnos .icon-wrapper { color: #0f766e; }
 
     .card h3 {
         margin: 0 0 12px 0;
@@ -325,6 +327,7 @@ $user = currentUser();
     </div>
     <div>
         <?php if ($user['role'] === 'admin'): ?>
+            <a href="/dragstore-pos/views/admin/dashboard.php">Dashboard</a>
             <a href="/dragstore-pos/views/admin/usuarios.php">Usuarios</a>
             <a href="/dragstore-pos/views/admin/audit.php">Auditoría</a>
         <?php endif; ?>
@@ -350,6 +353,13 @@ $user = currentUser();
     </a>
 
     <?php if ($user['role'] === 'admin'): ?>
+        <a href="views/admin/dashboard.php" class="card dashboard">
+            <div class="icon-wrapper">
+                <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <h3>Dashboard Ejecutivo</h3>
+            <p>KPIs operativos, metodos de pago, turnos y rendimiento por usuario.</p>
+        </a>
         <a href="views/productos/index_productos.php" class="card inventory">
             <?php if(isset($alertas) && $alertas > 0): ?>
                 <span class="badge"><i class="fa-solid fa-triangle-exclamation"></i> <?php echo $alertas; ?> críticos</span>
@@ -359,6 +369,13 @@ $user = currentUser();
             </div>
             <h3>Inventario</h3>
             <p>Controlar existencias, actualizar precios y gestionar stock.</p>
+        </a>
+        <a href="views/ventas/historial_turnos.php" class="card turnos">
+            <div class="icon-wrapper">
+                <i class="fa-solid fa-business-time"></i>
+            </div>
+            <h3>Turnos de Caja</h3>
+            <p>Visualizar y administrar aperturas, cierres y actas de turno.</p>
         </a>
     <?php endif; ?>
 

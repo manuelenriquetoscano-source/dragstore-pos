@@ -70,4 +70,9 @@ class TurnoCajaController
     {
         return $this->service->exportarCsv($filters, $adminMode, $usuarioActualId, $limit);
     }
+
+    public function obtenerActa(int $turnoId, bool $adminMode, int $usuarioActualId): array
+    {
+        return $this->service->obtenerActa($turnoId, $adminMode, $usuarioActualId);
+    }
 }

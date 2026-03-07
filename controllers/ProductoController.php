@@ -15,12 +15,12 @@ class ProductoController
     {
         $termino = trim($termino);
         if ($termino === '') {
-            return ['ok' => false, 'message' => 'Término vacío', 'statusCode' => 400, 'data' => []];
+            return ['ok' => false, 'message' => 'Termino vacio', 'statusCode' => 400, 'data' => []];
         }
 
         $productos = $this->service->buscar($termino);
         if (empty($productos)) {
-            return ['ok' => false, 'message' => 'No se encontró nada', 'statusCode' => 404, 'data' => []];
+            return ['ok' => false, 'message' => 'No se encontro nada', 'statusCode' => 404, 'data' => []];
         }
 
         return [
@@ -50,5 +50,25 @@ class ProductoController
     public function contarStockCritico(int $minimo = 5): int
     {
         return $this->service->contarStockCritico($minimo);
+    }
+
+    public function obtenerProducto(int $id): ?array
+    {
+        return $this->service->obtenerProducto($id);
+    }
+
+    public function listarLotesPorProducto(int $productoId): array
+    {
+        return $this->service->listarLotesPorProducto($productoId);
+    }
+
+    public function registrarLoteDesdeRequest(array $request): array
+    {
+        return $this->service->registrarLote($request);
+    }
+
+    public function listarReporteVencimientos(string $estado = '', int $dias = 30): array
+    {
+        return $this->service->listarReporteVencimientos($estado, $dias);
     }
 }

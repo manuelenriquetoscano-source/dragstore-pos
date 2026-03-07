@@ -304,6 +304,9 @@ function formatAuditDetails(?array $details): string
                     $actions = [
                         'auth.login',
                         'auth.logout',
+                        'turno.open',
+                        'turno.close',
+                        'venta.cancel',
                         'user.create',
                         'user.password_change',
                         'user.role_change',

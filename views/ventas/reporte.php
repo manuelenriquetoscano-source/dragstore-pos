@@ -173,11 +173,101 @@ $user = currentUser();
             font-size: 13px;
         }
 
+        .badge {
+            display: inline-block;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+        .badge.ok {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        .badge.off {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+            z-index: 9999;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 480px;
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 20px 35px -20px rgba(15, 23, 42, 0.55);
+            padding: 14px;
+        }
+
+        .modal h3 {
+            margin: 0 0 8px;
+            font-size: 20px;
+            color: #0f172a;
+        }
+
+        .modal p {
+            margin: 0 0 10px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .modal label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #334155;
+        }
+
+        .modal select,
+        .modal textarea {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 9px 10px;
+            font-size: 14px;
+            background: #fff;
+            margin-bottom: 8px;
+        }
+
+        .modal textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn.danger {
+            background: #b91c1c;
+        }
+
         @media (min-width: 769px) {
             body { padding: 24px; }
             .wrap { padding: 22px; }
             h1 { font-size: 30px; }
-            .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
             th, td { font-size: 15px; }
             .btn { font-size: 14px; }
         }
@@ -197,6 +287,9 @@ $user = currentUser();
                 (<?php echo htmlspecialchars($user['role'], ENT_QUOTES, 'UTF-8'); ?>)
             </div>
             <div class="actions">
+                <?php if (($user['role'] ?? '') === 'admin'): ?>
+                    <a class="btn" href="/dragstore-pos/views/admin/dashboard.php">Dashboard</a>
+                <?php endif; ?>
                 <a class="btn" href="/dragstore-pos/views/ventas/caja.php">POS</a>
                 <a class="btn" href="/dragstore-pos/index.php">Menu</a>
                 <a class="btn" href="/dragstore-pos/logout.php">Salir</a>
@@ -224,6 +317,10 @@ $user = currentUser();
                 <div class="label">Total vendido</div>
                 <div class="value">$<?php echo number_format((float)$reporte['total'], 2); ?></div>
             </div>
+            <div class="kpi">
+                <div class="label">Total anulado</div>
+                <div class="value">$<?php echo number_format((float)($reporte['total_anulado'] ?? 0), 2); ?></div>
+            </div>
         </div>
 
         <?php if (!empty($reporte['ventas'])): ?>
@@ -235,6 +332,11 @@ $user = currentUser();
                             <th>ID Venta</th>
                             <th>Fecha y Hora</th>
                             <th>Total</th>
+                            <th>Estado</th>
+                            <th>Ticket</th>
+                            <?php if (($user['role'] ?? '') === 'admin'): ?>
+                                <th>Accion</th>
+                            <?php endif; ?>
                         </tr>
                     </thead>
                     <tbody>
@@ -243,6 +345,25 @@ $user = currentUser();
                                 <td>#<?php echo (int)$venta['id']; ?></td>
                                 <td><?php echo htmlspecialchars((string)$venta['fecha'], ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td>$<?php echo number_format((float)$venta['total'], 2); ?></td>
+                                <td>
+                                    <?php if (($venta['estado'] ?? 'completada') === 'anulada'): ?>
+                                        <span class="badge off">Anulada</span>
+                                    <?php else: ?>
+                                        <span class="badge ok">Completada</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a class="btn no-print" href="/dragstore-pos/views/ventas/ticket_venta.php?id=<?php echo (int)$venta['id']; ?>" target="_blank" rel="noopener">Reimprimir</a>
+                                </td>
+                                <?php if (($user['role'] ?? '') === 'admin'): ?>
+                                    <td>
+                                        <?php if (($venta['estado'] ?? 'completada') !== 'anulada'): ?>
+                                            <button class="btn no-print" type="button" onclick="abrirModalAnulacion(<?php echo (int)$venta['id']; ?>)">Anular</button>
+                                        <?php else: ?>
+                                            <span class="muted"><?php echo htmlspecialchars((string)($venta['motivo_anulacion'] ?? 'Motivo no informado'), ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endif; ?>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -254,6 +375,120 @@ $user = currentUser();
             </div>
         <?php endif; ?>
     </div>
+    <div id="modal-anulacion" class="modal-backdrop no-print" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-anulacion-title">
+            <h3 id="modal-anulacion-title">Anular Venta</h3>
+            <p id="modal-anulacion-subtitle">Confirma el motivo de anulacion de la venta.</p>
+            <input type="hidden" id="modal-venta-id" value="">
+            <div>
+                <label for="modal-motivo-tipo">Motivo</label>
+                <select id="modal-motivo-tipo">
+                    <option value="">Seleccionar motivo</option>
+                    <option value="error_carga">Error de carga</option>
+                    <option value="cliente_desiste">Cliente desiste</option>
+                    <option value="producto_equivocado">Producto equivocado</option>
+                    <option value="cobro_incorrecto">Cobro incorrecto</option>
+                    <option value="otro">Otro</option>
+                </select>
+            </div>
+            <div>
+                <label for="modal-motivo-detalle">Detalle (opcional)</label>
+                <textarea id="modal-motivo-detalle" placeholder="Agrega contexto para auditoria..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn" onclick="cerrarModalAnulacion()">Cancelar</button>
+                <button type="button" class="btn danger" onclick="confirmarAnulacion()">Confirmar Anulacion</button>
+            </div>
+        </div>
+    </div>
+<script>
+let anulacionEnProceso = false;
+
+function abrirModalAnulacion(ventaId) {
+    const modal = document.getElementById('modal-anulacion');
+    const ventaInput = document.getElementById('modal-venta-id');
+    const motivoTipo = document.getElementById('modal-motivo-tipo');
+    const motivoDetalle = document.getElementById('modal-motivo-detalle');
+    const subtitle = document.getElementById('modal-anulacion-subtitle');
+
+    ventaInput.value = String(ventaId);
+    motivoTipo.value = '';
+    motivoDetalle.value = '';
+    subtitle.textContent = 'Confirma el motivo de anulacion de la venta #' + ventaId + '.';
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function cerrarModalAnulacion() {
+    const modal = document.getElementById('modal-anulacion');
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+function normalizarMotivo(tipo, detalle) {
+    const labels = {
+        error_carga: 'Error de carga',
+        cliente_desiste: 'Cliente desiste',
+        producto_equivocado: 'Producto equivocado',
+        cobro_incorrecto: 'Cobro incorrecto',
+        otro: 'Otro'
+    };
+    const base = labels[tipo] || '';
+    const extra = (detalle || '').trim();
+    if (!base && !extra) {
+        return '';
+    }
+    if (!extra) {
+        return base;
+    }
+    return base ? (base + ': ' + extra) : extra;
+}
+
+function confirmarAnulacion() {
+    if (anulacionEnProceso) return;
+    const ventaId = parseInt(document.getElementById('modal-venta-id').value, 10) || 0;
+    const tipo = document.getElementById('modal-motivo-tipo').value;
+    const detalle = document.getElementById('modal-motivo-detalle').value;
+    const motivo = normalizarMotivo(tipo, detalle);
+
+    if (!ventaId) {
+        alert('Venta invalida.');
+        return;
+    }
+    if (!motivo) {
+        alert('Debe seleccionar un motivo o ingresar un detalle.');
+        return;
+    }
+    if (!window.confirm('Confirma anular la venta #' + ventaId + '? Esta accion reingresa stock y no se puede deshacer.')) {
+        return;
+    }
+
+    anulacionEnProceso = true;
+    fetch('/dragstore-pos/anular_venta.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ venta_id: ventaId, motivo: motivo })
+    })
+    .then(response => response.json())
+    .then(res => {
+        if (res.status !== 'success') {
+            throw new Error(res.message || 'No se pudo anular la venta');
+        }
+        cerrarModalAnulacion();
+        alert('Venta anulada correctamente.');
+        window.location.reload();
+    })
+    .catch(error => alert(error.message || 'Error al anular venta.'))
+    .finally(() => {
+        anulacionEnProceso = false;
+    });
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalAnulacion();
+    }
+});
+</script>
 </body>
 </html>
-

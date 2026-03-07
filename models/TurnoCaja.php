@@ -252,4 +252,76 @@ class TurnoCaja
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return (int)($row['total'] ?? 0);
     }
+
+    public function obtenerDetalleActa(int $turnoId): ?array
+    {
+        $query = "SELECT t.id, t.usuario_id, t.opened_at, t.closed_at, t.monto_inicial, t.monto_final_declarado,
+                         t.total_ventas, t.cantidad_ventas, t.diferencia, t.estado, t.observaciones,
+                         u.username, u.display_name
+                  FROM {$this->table} t
+                  INNER JOIN usuarios u ON u.id = t.usuario_id
+                  WHERE t.id = :id
+                  LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':id' => $turnoId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function resumenPagosPorTurno(int $turnoId): array
+    {
+        $hasMetodo = $this->ventasHasColumn('metodo_pago');
+        $hasEfectivo = $this->ventasHasColumn('monto_efectivo');
+        $hasDigital = $this->ventasHasColumn('monto_digital');
+
+        if ($hasMetodo && $hasEfectivo && $hasDigital) {
+            $query = "SELECT
+                        COALESCE(SUM(total), 0) AS total_ventas,
+                        COALESCE(SUM(CASE WHEN metodo_pago = 'efectivo' THEN total ELSE 0 END), 0) AS total_efectivo_puro,
+                        COALESCE(SUM(CASE WHEN metodo_pago = 'tarjeta' THEN total ELSE 0 END), 0) AS total_tarjeta,
+                        COALESCE(SUM(CASE WHEN metodo_pago = 'transferencia' THEN total ELSE 0 END), 0) AS total_transferencia,
+                        COALESCE(SUM(CASE WHEN metodo_pago = 'mixto' THEN total ELSE 0 END), 0) AS total_mixto,
+                        COALESCE(SUM(
+                            CASE
+                                WHEN monto_efectivo IS NOT NULL THEN monto_efectivo
+                                WHEN metodo_pago IN ('tarjeta', 'transferencia') THEN 0
+                                ELSE total
+                            END
+                        ), 0) AS total_efectivo_real,
+                        COALESCE(SUM(
+                            CASE
+                                WHEN monto_digital IS NOT NULL THEN monto_digital
+                                WHEN metodo_pago IN ('tarjeta', 'transferencia') THEN total
+                                ELSE 0
+                            END
+                        ), 0) AS total_digital_real
+                      FROM ventas
+                      WHERE turno_id = :turno_id";
+        } else {
+            $query = "SELECT
+                        COALESCE(SUM(total), 0) AS total_ventas,
+                        COALESCE(SUM(total), 0) AS total_efectivo_puro,
+                        0 AS total_tarjeta,
+                        0 AS total_transferencia,
+                        0 AS total_mixto,
+                        COALESCE(SUM(total), 0) AS total_efectivo_real,
+                        0 AS total_digital_real
+                      FROM ventas
+                      WHERE turno_id = :turno_id";
+        }
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute([':turno_id' => $turnoId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'total_ventas' => (float)($row['total_ventas'] ?? 0),
+            'total_efectivo_puro' => (float)($row['total_efectivo_puro'] ?? 0),
+            'total_tarjeta' => (float)($row['total_tarjeta'] ?? 0),
+            'total_transferencia' => (float)($row['total_transferencia'] ?? 0),
+            'total_mixto' => (float)($row['total_mixto'] ?? 0),
+            'total_efectivo_real' => (float)($row['total_efectivo_real'] ?? 0),
+            'total_digital_real' => (float)($row['total_digital_real'] ?? 0)
+        ];
+    }
 }

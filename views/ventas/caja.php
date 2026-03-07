@@ -79,6 +79,27 @@ $user = currentUser();
             color: var(--text-primary);
             box-sizing: border-box;
         }
+        .scanner-suggestions {
+            margin-top: 8px;
+            border: 1px solid rgba(148, 163, 184, 0.32);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            overflow: hidden;
+            display: none;
+        }
+        .scanner-suggestion-item {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            cursor: pointer;
+            font-size: 13px;
+            color: #1e293b;
+        }
+        .scanner-suggestion-item:last-child {
+            border-bottom: none;
+        }
+        .scanner-suggestion-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
 
         #input_codigo:focus {
             outline: none;
@@ -125,6 +146,54 @@ $user = currentUser();
             font-weight: bold;
             margin-top: 20px;
             color: var(--brand);
+        }
+        .promo-box {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.52);
+            font-size: 13px;
+        }
+        .promo-box .line {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .promo-box .line:last-child {
+            margin-bottom: 0;
+        }
+        .promo-box .label {
+            color: #334155;
+            font-weight: 700;
+        }
+        .promo-box .value {
+            color: #0f766e;
+            font-weight: 800;
+        }
+        .promo-list {
+            margin-top: 6px;
+            color: #475569;
+            font-size: 12px;
+        }
+        .qty-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .qty-btn {
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background: rgba(255,255,255,0.9);
+            color: #1e293b;
+            border-radius: 6px;
+            width: 22px;
+            height: 22px;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
         }
 
         .payment-box {
@@ -194,6 +263,13 @@ $user = currentUser();
         .btn-confirmar:hover {
             transform: translateY(-2px);
             box-shadow: 0 20px 28px -20px rgba(35, 144, 60, 0.95);
+        }
+
+        .btn-confirmar:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
         #info_producto {
@@ -288,6 +364,25 @@ $user = currentUser();
             gap: 8px;
         }
 
+        .quick-ticket-row {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .quick-ticket-input {
+            flex: 1 1 150px;
+            min-width: 120px;
+            padding: 9px 10px;
+            border: 1px solid rgba(148, 163, 184, 0.5);
+            border-radius: 10px;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.85);
+            color: #1e293b;
+        }
+
         .btn-index,
         .btn-logout {
             display: inline-flex;
@@ -303,6 +398,10 @@ $user = currentUser();
             font-size: 13px;
             letter-spacing: 0.2px;
             box-shadow: 0 14px 20px -18px rgba(44, 62, 80, 0.9);
+        }
+
+        .btn-reprint {
+            background: rgba(30, 64, 175, 0.9);
         }
 
         .btn-index:hover,
@@ -381,7 +480,7 @@ $user = currentUser();
             .top-actions-right {
                 width: 100%;
                 display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(2, minmax(0, 1fr));
                 gap: 8px;
             }
 
@@ -390,6 +489,15 @@ $user = currentUser();
                 width: 100%;
                 padding: 10px;
                 font-size: 12px;
+            }
+
+            .quick-ticket-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .quick-ticket-input {
+                width: 100%;
             }
 
             h2 {
@@ -570,14 +678,19 @@ $user = currentUser();
             <?php echo htmlspecialchars($user['display_name'], ENT_QUOTES, 'UTF-8'); ?> (<?php echo htmlspecialchars($user['role'], ENT_QUOTES, 'UTF-8'); ?>)
         </div>
         <div class="top-actions-right">
-            <a href="/dragstore-pos/views/ventas/historial_turnos.php" class="btn-index">Turnos</a>
+            <button type="button" class="btn-index btn-reprint" onclick="reimprimirUltimoTicket()">Ultimo Ticket</button>
             <a href="/dragstore-pos/index.php" class="btn-index">Menu</a>
             <a href="/dragstore-pos/logout.php" class="btn-logout">Salir</a>
         </div>
     </div>
+    <div class="quick-ticket-row">
+        <input type="number" id="reprint_venta_id" class="quick-ticket-input" min="1" step="1" placeholder="Reimprimir por #ID de venta">
+        <button type="button" class="btn-index btn-reprint" onclick="reimprimirPorVentaId()">Reimprimir #ID</button>
+    </div>
     <h2>Scanner de Productos</h2>
     <input type="text" id="input_codigo" placeholder="Escanee codigo de barras..." autofocus>
     <p><small>El sistema buscara automaticamente al detectar un codigo.</small></p>
+    <div id="scanner_suggestions" class="scanner-suggestions"></div>
     <hr>
     <div id="info_producto" style="color: #666;">Esperando escaneo...</div>
     <div class="turno-box">
@@ -594,8 +707,10 @@ $user = currentUser();
             </div>
         </div>
         <div class="turno-actions">
-            <button type="button" class="btn-turno open" onclick="abrirTurno()">ABRIR TURNO</button>
-            <button type="button" class="btn-turno close" onclick="cerrarTurno()">CERRAR TURNO</button>
+            <?php if (($user['role'] ?? '') === 'admin'): ?>
+                <button type="button" class="btn-turno open" onclick="abrirTurno()">ABRIR TURNO</button>
+                <button type="button" class="btn-turno close" onclick="cerrarTurno()">CERRAR TURNO</button>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -617,6 +732,12 @@ $user = currentUser();
     </table>
     </div>
     <div class="total-box">Total: $<span id="total_venta">0.00</span></div>
+    <div class="promo-box" id="promo_box">
+        <div class="line"><span class="label">Subtotal bruto</span><span class="value" id="subtotal_bruto">$0.00</span></div>
+        <div class="line"><span class="label">Descuento promos</span><span class="value" id="total_descuento">$0.00</span></div>
+        <div class="line"><span class="label">Total final</span><span class="value" id="total_neto">$0.00</span></div>
+        <div class="promo-list" id="promo_list">Sin promociones aplicadas.</div>
+    </div>
     <div class="payment-box">
         <p class="payment-title">Pago</p>
         <div class="payment-grid">
@@ -655,15 +776,28 @@ const metodoPagoEl = document.getElementById('metodo_pago');
 const montoRecibidoEl = document.getElementById('monto_recibido');
 const montoEfectivoEl = document.getElementById('monto_efectivo');
 const montoDigitalEl = document.getElementById('monto_digital');
+const suggestionsEl = document.getElementById('scanner_suggestions');
+const subtotalBrutoEl = document.getElementById('subtotal_bruto');
+const totalDescuentoEl = document.getElementById('total_descuento');
+const totalNetoEl = document.getElementById('total_neto');
+const promoListEl = document.getElementById('promo_list');
 const fieldMontoRecibidoEl = document.getElementById('field_monto_recibido');
 const fieldMontoEfectivoEl = document.getElementById('field_monto_efectivo');
 const fieldMontoDigitalEl = document.getElementById('field_monto_digital');
 const turnoStatusEl = document.getElementById('turno_status');
 const turnoMontoInicialEl = document.getElementById('turno_monto_inicial');
 const turnoMontoFinalEl = document.getElementById('turno_monto_final');
+const reprintVentaIdEl = document.getElementById('reprint_venta_id');
+const puedeAbrirTurno = <?php echo (($user['role'] ?? '') === 'admin') ? 'true' : 'false'; ?>;
 let ventaEnProceso = false;
 let turnoActual = null;
 let turnoResumen = null;
+let promocionesActivas = [];
+let debounceBusqueda = null;
+const scannerPlaceholderEnabled = 'Escanee codigo de barras...';
+const scannerPlaceholderDisabled = 'Abra un turno para habilitar ventas';
+const mensajeNoTurnoAdmin = 'No hay turno abierto. Debe dirigirse al administrador para abrir o cerrar un turno.';
+let alertaNoTurnoMostrada = false;
 
 function getTotalActual() {
     return parseFloat(document.getElementById('total_venta').innerText || '0') || 0;
@@ -672,6 +806,154 @@ function getTotalActual() {
 function parseMoney(input) {
     const value = parseFloat((input || '').toString());
     return Number.isFinite(value) ? value : 0;
+}
+
+function normalizePromoRule(rule) {
+    if (!rule || typeof rule !== 'object') return null;
+    const type = String(rule.type || '').toLowerCase();
+    if (!['2x1', 'percent', 'combo'].includes(type)) return null;
+    const normalized = { ...rule, type };
+    if (!Array.isArray(normalized.product_ids)) normalized.product_ids = [];
+    if (!Array.isArray(normalized.required_items)) normalized.required_items = [];
+    normalized.label = String(normalized.label || normalized.name || ('Promo ' + type));
+    return normalized;
+}
+
+function loadPromociones() {
+    fetch('/dragstore-pos/promociones_ajax.php')
+        .then(response => response.json())
+        .then(res => {
+            if (res.status !== 'success' || !Array.isArray(res.data)) {
+                promocionesActivas = [];
+                return;
+            }
+            promocionesActivas = res.data.map(normalizePromoRule).filter(Boolean);
+            actualizarTabla();
+        })
+        .catch(() => {
+            promocionesActivas = [];
+        });
+}
+
+function getPromoContextForItem(item) {
+    return {
+        productId: parseInt(item.id, 10) || 0,
+        codigo: String(item.codigo_barras || ''),
+        nombre: String(item.nombre || '')
+    };
+}
+
+function ruleAppliesToItem(rule, item) {
+    const ctx = getPromoContextForItem(item);
+    const productIds = (rule.product_ids || []).map(v => parseInt(v, 10)).filter(v => v > 0);
+    const codigos = Array.isArray(rule.codigos_barras) ? rule.codigos_barras.map(v => String(v)) : [];
+    if (productIds.length === 0 && codigos.length === 0) return false;
+    return productIds.includes(ctx.productId) || codigos.includes(ctx.codigo);
+}
+
+function calcularPromociones(carritoLocal) {
+    const lineDiscounts = {};
+    const detalles = [];
+    const subtotalBruto = carritoLocal.reduce((acc, item) => acc + (parseMoney(item.precio) * (parseInt(item.cantidad, 10) || 0)), 0);
+    let descuentoTotal = 0;
+
+    function addLineDiscount(index, amount) {
+        if (amount <= 0) return;
+        lineDiscounts[index] = (lineDiscounts[index] || 0) + amount;
+        descuentoTotal += amount;
+    }
+
+    promocionesActivas.forEach(rule => {
+        if (!rule) return;
+
+        if (rule.type === '2x1') {
+            carritoLocal.forEach((item, index) => {
+                if (!ruleAppliesToItem(rule, item)) return;
+                const qty = parseInt(item.cantidad, 10) || 0;
+                if (qty < 2) return;
+                const freeUnits = Math.floor(qty / 2);
+                const discount = freeUnits * parseMoney(item.precio);
+                if (discount > 0) {
+                    addLineDiscount(index, discount);
+                    detalles.push(`${rule.label}: ${item.nombre} (-$${discount.toFixed(2)})`);
+                }
+            });
+            return;
+        }
+
+        if (rule.type === 'percent') {
+            const percent = Math.max(0, Math.min(100, parseMoney(rule.percent)));
+            const minQty = Math.max(1, parseInt(rule.min_qty || 1, 10) || 1);
+            carritoLocal.forEach((item, index) => {
+                if (!ruleAppliesToItem(rule, item)) return;
+                const qty = parseInt(item.cantidad, 10) || 0;
+                if (qty < minQty) return;
+                const subtotal = parseMoney(item.precio) * qty;
+                const discount = subtotal * (percent / 100);
+                if (discount > 0) {
+                    addLineDiscount(index, discount);
+                    detalles.push(`${rule.label}: ${item.nombre} ${percent}% (-$${discount.toFixed(2)})`);
+                }
+            });
+            return;
+        }
+
+        if (rule.type === 'combo') {
+            const required = Array.isArray(rule.required_items) ? rule.required_items : [];
+            const comboPrice = parseMoney(rule.combo_price);
+            if (required.length === 0 || comboPrice <= 0) return;
+
+            const reqIndexes = [];
+            let sets = Number.POSITIVE_INFINITY;
+            let regularSetPrice = 0;
+
+            required.forEach(req => {
+                const reqProductId = parseInt(req.product_id, 10) || 0;
+                const reqCodigo = String(req.codigo_barras || '');
+                const reqQty = Math.max(1, parseInt(req.qty || 1, 10) || 1);
+                const idx = carritoLocal.findIndex(ci => {
+                    const ciId = parseInt(ci.id, 10) || 0;
+                    const ciCodigo = String(ci.codigo_barras || '');
+                    if (reqProductId > 0 && ciId === reqProductId) return true;
+                    if (reqCodigo !== '' && ciCodigo === reqCodigo) return true;
+                    return false;
+                });
+                if (idx < 0) {
+                    sets = 0;
+                    return;
+                }
+                const item = carritoLocal[idx];
+                const qty = parseInt(item.cantidad, 10) || 0;
+                const possible = Math.floor(qty / reqQty);
+                sets = Math.min(sets, possible);
+                regularSetPrice += parseMoney(item.precio) * reqQty;
+                reqIndexes.push({ index: idx, reqQty });
+            });
+
+            if (!Number.isFinite(sets) || sets <= 0) return;
+            const regularTotal = regularSetPrice * sets;
+            const comboTotal = comboPrice * sets;
+            const discountTotal = Math.max(0, regularTotal - comboTotal);
+            if (discountTotal <= 0 || regularTotal <= 0) return;
+
+            reqIndexes.forEach(({ index, reqQty }) => {
+                const item = carritoLocal[index];
+                const itemPart = parseMoney(item.precio) * reqQty * sets;
+                const proportional = discountTotal * (itemPart / regularTotal);
+                addLineDiscount(index, proportional);
+            });
+            detalles.push(`${rule.label}: combo x${sets} (-$${discountTotal.toFixed(2)})`);
+        }
+    });
+
+    const totalNeto = Math.max(0, subtotalBruto - descuentoTotal);
+    return {
+        subtotalBruto,
+        descuentoTotal,
+        totalNeto,
+        lineDiscounts,
+        detalles
+    };
 }
 
 function updatePaymentFields() {
@@ -751,6 +1033,30 @@ function buildPaymentPayload(total) {
     };
 }
 
+function setVentaHabilitada(habilitada) {
+    if (!inputCodigo || !btnConfirmar) return;
+
+    inputCodigo.disabled = !habilitada;
+    btnConfirmar.disabled = !habilitada;
+    inputCodigo.placeholder = habilitada ? scannerPlaceholderEnabled : scannerPlaceholderDisabled;
+
+    if (!habilitada) {
+        inputCodigo.value = '';
+        const msg = puedeAbrirTurno
+            ? 'Turno cerrado. Abra un turno para continuar.'
+            : mensajeNoTurnoAdmin;
+        document.getElementById('info_producto').innerHTML = `<span style="color:#b45309;">${msg}</span>`;
+        if (!puedeAbrirTurno && !alertaNoTurnoMostrada) {
+            alert(mensajeNoTurnoAdmin);
+            alertaNoTurnoMostrada = true;
+        }
+    } else {
+        document.getElementById('info_producto').innerHTML = '<span style="color:#0f766e;">Turno abierto. Scanner habilitado.</span>';
+        inputCodigo.focus();
+        alertaNoTurnoMostrada = false;
+    }
+}
+
 function renderTurnoStatus() {
     if (!turnoStatusEl) return;
     if (turnoActual && turnoActual.estado === 'abierto') {
@@ -762,12 +1068,14 @@ function renderTurnoStatus() {
         if (turnoMontoFinalEl && turnoMontoFinalEl.value.trim() === '') {
             turnoMontoFinalEl.value = esperado;
         }
+        setVentaHabilitada(true);
         return;
     }
     turnoStatusEl.innerText = 'Sin turno abierto.';
     if (turnoMontoFinalEl) {
         turnoMontoFinalEl.value = '';
     }
+    setVentaHabilitada(false);
 }
 
 function cargarEstadoTurno() {
@@ -789,6 +1097,10 @@ function cargarEstadoTurno() {
 }
 
 function abrirTurno() {
+    if (!puedeAbrirTurno) {
+        alert('Solo un administrador puede abrir turnos.');
+        return;
+    }
     const montoInicial = parseMoney(turnoMontoInicialEl.value);
     if (montoInicial < 0) {
         alert('Monto inicial invalido.');
@@ -811,6 +1123,10 @@ function abrirTurno() {
 }
 
 function cerrarTurno() {
+    if (!puedeAbrirTurno) {
+        alert('Solo un administrador puede cerrar turnos.');
+        return;
+    }
     if (turnoMontoFinalEl.value.trim() === '') {
         alert('Debe ingresar el monto final declarado.');
         return;
@@ -844,45 +1160,154 @@ function cerrarTurno() {
         .catch(error => alert(error.message || 'Error al cerrar turno.'));
 }
 
+function reimprimirUltimoTicket() {
+    fetch('/dragstore-pos/ultimo_ticket.php')
+        .then(response => response.json())
+        .then(res => {
+            if (res.status !== 'success' || !res.data || !res.data.venta_id) {
+                throw new Error(res.message || 'No hay ticket para reimprimir.');
+            }
+            const ventaId = parseInt(res.data.venta_id, 10);
+            if (!ventaId) {
+                throw new Error('ID de ticket invalido.');
+            }
+            window.open('/dragstore-pos/views/ventas/ticket_venta.php?id=' + ventaId, '_blank');
+        })
+        .catch(error => alert(error.message || 'No hay ticket disponible para reimpresion.'));
+}
+
+function reimprimirPorVentaId() {
+    const ventaId = parseInt((reprintVentaIdEl && reprintVentaIdEl.value) ? reprintVentaIdEl.value : '', 10);
+    if (!ventaId || ventaId <= 0) {
+        alert('Ingrese un ID de venta valido.');
+        return;
+    }
+    window.open('/dragstore-pos/views/ventas/ticket_venta.php?id=' + ventaId, '_blank');
+}
+
+if (reprintVentaIdEl) {
+    reprintVentaIdEl.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            reimprimirPorVentaId();
+        }
+    });
+}
+
 metodoPagoEl.addEventListener('change', updatePaymentFields);
 montoRecibidoEl.addEventListener('input', updateVuelto);
 montoEfectivoEl.addEventListener('input', updateVuelto);
 montoDigitalEl.addEventListener('input', updateVuelto);
 
-// 1. EVENTO DE ESCANEO
-inputCodigo.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        const codigo = this.value.trim();
-        if(codigo) buscarProducto(codigo);
-        this.value = ''; 
-    }
-});
-
-// 2. BUSCAR PRODUCTO (AJAX)
-function buscarProducto(codigo) {
-    fetch('/dragstore-pos/buscar_ajax.php?codigo=' + encodeURIComponent(codigo))
+function fetchProductos(termino) {
+    return fetch('/dragstore-pos/buscar_ajax.php?codigo=' + encodeURIComponent(termino))
         .then(response => {
             if (!response.ok) throw new Error('Error en la red');
             return response.json();
         })
         .then(res => {
-            if(res.status === 'success') {
-                const producto = Array.isArray(res.data) ? res.data[0] : res.data;
-                if (!producto) {
-                    alert("Producto no encontrado");
-                    return;
-                }
-
-                agregarAlCarrito(producto);
-                document.getElementById('info_producto').innerHTML = 
-                    `<span style="color:green">Anadido: ${producto.nombre}</span>`;
-            } else {
-                alert("Producto no encontrado");
-            }
+            if (res.status !== 'success') return [];
+            return Array.isArray(res.data) ? res.data : (res.data ? [res.data] : []);
         })
-        .catch(error => alert("Error de comunicacion con el servidor."));
+        .catch(() => []);
 }
+
+function renderSuggestions(productos) {
+    if (!suggestionsEl) return;
+    if (!Array.isArray(productos) || productos.length === 0) {
+        suggestionsEl.style.display = 'none';
+        suggestionsEl.innerHTML = '';
+        return;
+    }
+    suggestionsEl.innerHTML = productos.map((p, idx) => {
+        const stock = parseInt(p.stock || 0, 10);
+        return `<div class="scanner-suggestion-item" data-idx="${idx}">
+            <strong>${p.nombre}</strong> | Cod: ${p.codigo_barras || 'S/C'} | Stock: ${stock}
+        </div>`;
+    }).join('');
+    suggestionsEl.style.display = 'block';
+
+    Array.from(suggestionsEl.querySelectorAll('.scanner-suggestion-item')).forEach(el => {
+        el.addEventListener('click', function () {
+            const idx = parseInt(this.getAttribute('data-idx') || '-1', 10);
+            if (idx >= 0 && productos[idx]) {
+                agregarAlCarrito(productos[idx]);
+                inputCodigo.value = '';
+                renderSuggestions([]);
+            }
+        });
+    });
+}
+
+function setInfoProducto(producto) {
+    const lotesVencidos = parseInt(producto.lotes_vencidos || 0, 10);
+    const lotesPorVencer = parseInt(producto.lotes_por_vencer || 0, 10);
+    const fefoDate = producto.fefo_proximo_vencimiento ? String(producto.fefo_proximo_vencimiento) : '';
+    let fefoText = '';
+    if (lotesVencidos > 0) {
+        fefoText = ` | FEFO: ${lotesVencidos} lote(s) vencido(s)`;
+    } else if (fefoDate !== '') {
+        fefoText = ` | FEFO prox: ${fefoDate}`;
+        if (lotesPorVencer > 0) {
+            fefoText += ` (${lotesPorVencer} por vencer)`;
+        }
+    }
+    document.getElementById('info_producto').innerHTML =
+        `<span style="color:green">Anadido: ${producto.nombre}${fefoText}</span>`;
+}
+
+// 1. EVENTO DE ESCANEO / BUSQUEDA VIVA
+inputCodigo.addEventListener('keydown', function(e) {
+    if (!turnoActual || turnoActual.estado !== 'abierto') {
+        e.preventDefault();
+        return;
+    }
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const codigo = this.value.trim();
+        if (!codigo) return;
+        fetchProductos(codigo).then(productos => {
+            if (!productos.length) return alert('Producto no encontrado');
+            agregarAlCarrito(productos[0]);
+            inputCodigo.value = '';
+            renderSuggestions([]);
+        });
+    }
+});
+
+inputCodigo.addEventListener('input', function () {
+    if (!turnoActual || turnoActual.estado !== 'abierto') {
+        return;
+    }
+    const termino = this.value.trim();
+    if (debounceBusqueda) clearTimeout(debounceBusqueda);
+    if (termino.length === 0) {
+        renderSuggestions([]);
+        return;
+    }
+    debounceBusqueda = setTimeout(() => {
+        fetchProductos(termino).then(productos => {
+            if (!productos.length) {
+                renderSuggestions([]);
+                return;
+            }
+            if (productos.length === 1) {
+                agregarAlCarrito(productos[0]);
+                inputCodigo.value = '';
+                renderSuggestions([]);
+                return;
+            }
+            renderSuggestions(productos);
+        });
+    }, 220);
+});
+
+document.addEventListener('click', function (e) {
+    if (!suggestionsEl) return;
+    if (!suggestionsEl.contains(e.target) && e.target !== inputCodigo) {
+        renderSuggestions([]);
+    }
+});
 
 // 3. AGREGAR AL CARRITO (CON VALIDACION DE STOCK)
 function agregarAlCarrito(producto) {
@@ -901,6 +1326,7 @@ function agregarAlCarrito(producto) {
         }
         carrito.push({ ...producto, cantidad: 1 });
     }
+    setInfoProducto(producto);
     actualizarTabla();
 }
 
@@ -908,24 +1334,41 @@ function agregarAlCarrito(producto) {
 function actualizarTabla() {
     const tbody = document.querySelector('#tabla_venta tbody');
     tbody.innerHTML = '';
-    let total = 0;
+    const pricing = calcularPromociones(carrito);
 
     carrito.forEach((item, index) => {
         const subtotal = item.precio * item.cantidad;
-        total += subtotal;
+        const descuentoLinea = parseMoney((pricing.lineDiscounts || {})[index]);
+        const subtotalNeto = Math.max(0, subtotal - descuentoLinea);
         const colorStock = (item.cantidad >= item.stock) ? 'color: red; font-weight: bold;' : '';
+        const promoText = descuentoLinea > 0 ? `<br><small style="color:#b91c1c;">Promo -$${descuentoLinea.toFixed(2)}</small>` : '';
 
         tbody.innerHTML += `
             <tr>
                 <td data-label="Producto">${item.nombre}</td>
                 <td data-label="Precio">$${item.precio}</td>
-                <td data-label="Cant." style="${colorStock}">${item.cantidad} <small>(Stock: ${item.stock})</small></td>
-                <td data-label="Subtotal">$${subtotal.toFixed(2)}</td>
+                <td data-label="Cant." style="${colorStock}">
+                    <span class="qty-controls">
+                        <button class="qty-btn" onclick="disminuirCantidad(${index})">-</button>
+                        <strong>${item.cantidad}</strong>
+                        <button class="qty-btn" onclick="incrementarCantidad(${index})">+</button>
+                    </span>
+                    <small>(Stock: ${item.stock})</small>
+                </td>
+                <td data-label="Subtotal">$${subtotalNeto.toFixed(2)}${promoText}</td>
                 <td data-label="Accion"><button onclick="eliminarDelCarrito(${index})" style="border:none; color:red; cursor:pointer; background:transparent;">X</button></td>
             </tr>
         `;
     });
-    document.getElementById('total_venta').innerText = total.toFixed(2);
+    document.getElementById('total_venta').innerText = pricing.totalNeto.toFixed(2);
+    if (subtotalBrutoEl) subtotalBrutoEl.innerText = `$${pricing.subtotalBruto.toFixed(2)}`;
+    if (totalDescuentoEl) totalDescuentoEl.innerText = `$${pricing.descuentoTotal.toFixed(2)}`;
+    if (totalNetoEl) totalNetoEl.innerText = `$${pricing.totalNeto.toFixed(2)}`;
+    if (promoListEl) {
+        promoListEl.innerHTML = pricing.detalles.length
+            ? pricing.detalles.map(d => `<div>- ${d}</div>`).join('')
+            : 'Sin promociones aplicadas.';
+    }
     updatePaymentFields();
 }
 
@@ -935,12 +1378,33 @@ function eliminarDelCarrito(index) {
     actualizarTabla();
 }
 
+function incrementarCantidad(index) {
+    const item = carrito[index];
+    if (!item) return;
+    if (item.cantidad + 1 > item.stock) {
+        alert(`Solo quedan ${item.stock} unidades de ${item.nombre}`);
+        return;
+    }
+    item.cantidad += 1;
+    actualizarTabla();
+}
+
+function disminuirCantidad(index) {
+    const item = carrito[index];
+    if (!item) return;
+    item.cantidad -= 1;
+    if (item.cantidad <= 0) {
+        carrito.splice(index, 1);
+    }
+    actualizarTabla();
+}
+
 // 6. FINALIZAR VENTA (ENVIO AL SERVIDOR)
 function finalizarVenta() {
     if (ventaEnProceso) return;
     if (carrito.length === 0) return alert("El carrito esta vacio.");
     if (!turnoActual || turnoActual.estado !== 'abierto') {
-        return alert("Debe abrir un turno de caja antes de vender.");
+        return alert(puedeAbrirTurno ? 'Debe abrir un turno de caja antes de vender.' : mensajeNoTurnoAdmin);
     }
 
     ventaEnProceso = true;
@@ -955,6 +1419,13 @@ function finalizarVenta() {
     const pagoValidado = buildPaymentPayload(total);
     if (!pagoValidado.ok) {
         alert(pagoValidado.message);
+        ventaEnProceso = false;
+        if (btnConfirmar) {
+            btnConfirmar.disabled = false;
+            btnConfirmar.textContent = 'CONFIRMAR VENTA';
+            btnConfirmar.style.opacity = '';
+            btnConfirmar.style.cursor = '';
+        }
         return;
     }
     const datosVenta = { total: total, carrito: carrito, pago: pagoValidado.pago };
@@ -1170,6 +1641,9 @@ function imprimirTicket(datosVenta, ventanaExistente = null) {
 }
 
 updatePaymentFields();
+loadPromociones();
+actualizarTabla();
+setVentaHabilitada(false);
 cargarEstadoTurno();
 </script>
 </body>

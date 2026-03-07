@@ -1,0 +1,16 @@
+﻿"Dashboard Ejecutivo"
+Periodo,"2026-03-06 a 2026-03-06"
+
+KPI,Valor
+"Ventas Netas",3461.50
+"Ventas Anuladas",301.00
+"Cantidad Ventas",23
+"Ticket Promedio",150.50
+"Turnos Abiertos",1
+"Diferencia Turnos",-300451.50
+
+"Metodos de Pago"
+Metodo,Total
+efectivo,3010.00
+transferencia,301.00
+tarjeta,150.50

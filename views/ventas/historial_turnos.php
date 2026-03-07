@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../config/bootstrap.php';
 requireLogin(['admin', 'caja']);
 require_once __DIR__ . '/../../controllers/TurnoCajaController.php';
 require_once __DIR__ . '/../../models/Usuario.php';
+require_once __DIR__ . '/../../services/DashboardService.php';
 
 $database = new Database();
 $db = $database->getConnection();
@@ -10,6 +11,7 @@ $controller = new TurnoCajaController($db);
 $user = currentUser();
 $isAdmin = (($user['role'] ?? '') === 'admin');
 $usuarioActualId = (int)($user['id'] ?? 0);
+$cacheCleared = null;
 
 $filters = [
     'date_from' => isset($_GET['date_from']) ? (string)$_GET['date_from'] : '',
@@ -17,8 +19,26 @@ $filters = [
     'estado' => isset($_GET['estado']) ? (string)$_GET['estado'] : '',
     'usuario_id' => isset($_GET['usuario_id']) ? (string)$_GET['usuario_id'] : ''
 ];
+if (isset($_POST['clear_cache']) && (string)$_POST['clear_cache'] === '1' && $isAdmin) {
+    $cacheCleared = DashboardService::clearCacheGlobal();
+}
+if ($filters['date_from'] === '' && isset($_POST['date_from'])) {
+    $filters['date_from'] = (string)$_POST['date_from'];
+}
+if ($filters['date_to'] === '' && isset($_POST['date_to'])) {
+    $filters['date_to'] = (string)$_POST['date_to'];
+}
+if ($filters['estado'] === '' && isset($_POST['estado'])) {
+    $filters['estado'] = (string)$_POST['estado'];
+}
+if ($filters['usuario_id'] === '' && isset($_POST['usuario_id'])) {
+    $filters['usuario_id'] = (string)$_POST['usuario_id'];
+}
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $perPage = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 20;
+if (!isset($_GET['per_page']) && isset($_POST['per_page'])) {
+    $perPage = (int)$_POST['per_page'];
+}
 $perPage = in_array($perPage, [20, 50, 100], true) ? $perPage : 20;
 
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
@@ -120,6 +140,7 @@ function turnosQuery(array $filters, int $page, int $perPage): string
         h1 { margin: 0; font-size: 26px; }
         .muted { color: #475569; font-size: 13px; }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .inline-form { margin: 0; }
         .btn {
             border: 1px solid rgba(255,255,255,0.45);
             background: rgba(44, 62, 80, 0.92);
@@ -187,6 +208,16 @@ function turnosQuery(array $filters, int $page, int $perPage): string
             flex-wrap: wrap;
             align-items: center;
         }
+        .cache-cleared {
+            display: inline-block;
+            margin-bottom: 10px;
+            font-size: 12px;
+            color: #065f46;
+            background: rgba(16, 185, 129, 0.16);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 999px;
+            padding: 3px 8px;
+        }
         @media (min-width: 980px) {
             body { padding: 24px; }
             .wrap { padding: 18px; }
@@ -211,8 +242,21 @@ function turnosQuery(array $filters, int $page, int $perPage): string
             <a class="btn secondary" href="/dragstore-pos/views/ventas/caja.php">Caja</a>
             <a class="btn" href="/dragstore-pos/index.php">Menu</a>
             <a class="btn" href="/dragstore-pos/logout.php">Salir</a>
+            <?php if ($isAdmin): ?>
+                <form class="inline-form" method="POST" action="/dragstore-pos/views/ventas/historial_turnos.php">
+                    <input type="hidden" name="date_from" value="<?php echo htmlspecialchars($filters['date_from'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="date_to" value="<?php echo htmlspecialchars($filters['date_to'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="estado" value="<?php echo htmlspecialchars($filters['estado'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="usuario_id" value="<?php echo htmlspecialchars($filters['usuario_id'], ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="per_page" value="<?php echo (int)$perPage; ?>">
+                    <button class="btn" type="submit" name="clear_cache" value="1">Limpiar cache</button>
+                </form>
+            <?php endif; ?>
         </div>
     </div>
+    <?php if ($cacheCleared !== null): ?>
+        <div class="cache-cleared">Cache limpiada: <?php echo (int)$cacheCleared; ?> archivo(s)</div>
+    <?php endif; ?>
 
     <form class="filters" method="GET" action="historial_turnos.php">
         <div>
@@ -273,11 +317,12 @@ function turnosQuery(array $filters, int $page, int $perPage): string
                 <th>Cantidad</th>
                 <th>Final</th>
                 <th>Diferencia</th>
+                <th>Acta</th>
             </tr>
             </thead>
             <tbody>
             <?php if (empty($items)): ?>
-                <tr><td colspan="10">No hay turnos para los filtros seleccionados.</td></tr>
+                <tr><td colspan="11">No hay turnos para los filtros seleccionados.</td></tr>
             <?php else: ?>
                 <?php foreach ($items as $row): ?>
                     <tr>
@@ -297,6 +342,13 @@ function turnosQuery(array $filters, int $page, int $perPage): string
                         <td><?php echo (int)($row['cantidad_ventas'] ?? 0); ?></td>
                         <td><?php echo $row['monto_final_declarado'] !== null ? ('$' . number_format((float)$row['monto_final_declarado'], 2, '.', '')) : '-'; ?></td>
                         <td><?php echo $row['diferencia'] !== null ? ('$' . number_format((float)$row['diferencia'], 2, '.', '')) : '-'; ?></td>
+                        <td>
+                            <?php if (($row['estado'] ?? '') === 'cerrado'): ?>
+                                <a class="btn" href="/dragstore-pos/views/ventas/acta_turno.php?id=<?php echo (int)$row['id']; ?>" target="_blank" rel="noopener">Ver/Imprimir</a>
+                            <?php else: ?>
+                                -
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
